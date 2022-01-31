@@ -1,0 +1,72 @@
+version: "3"
+services:
+  mullvad:
+    image: qmcgaw/gluetun
+    cap_add:
+      - NET_ADMIN
+    network_mode: bridge
+    environment:
+      - VPNSP=mullvad
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=gPweuyAgNm29H4Q9NE5uCWd/RyqR7RgiFnaUaR+1nnk=
+      - WIREGUARD_ADDRESS=10.66.68.150/32
+      - COUNTRY=USA
+      - CITY=Chicago IL
+      - FIREWALL_VPN_INPUT_PORTS=61746
+      - TZ=America/Chicago
+    ports:
+      # - 58215:58215
+      - 8080:8080 # qbittorrent
+        #- 54875:54875
+        #- 55657:55657
+  nordvpn:
+    image: qmcgaw/gluetun
+    cap_add:
+      - NET_ADMIN
+    network_mode: bridge
+    ports:
+      - 6881:6881 # qbittorrent
+      - 6881:6881/udp # qbittorrent
+    environment:
+      - VPNSP=nordvpn
+      - REGION=United States
+      - TZ=America/Chicago
+      - OPENVPN_USER=6SYHtf9ebeJALNGzX4teu6KK
+      - OPENVPN_PASSWORD=ByRSqSDnak6aXATwf3wWmH16
+    restart: always
+  whatboxvpn:
+    image: qmcgaw/gluetun
+    cap_add:
+      - NET_ADMIN
+    network_mode: bridge
+    environment:
+      - VPNSP=custom
+      - OPENVPN_CUSTOM_CONFIG=/gluetun/custom.conf
+      - OPENVPN_USER=nibble
+      - OPENVPN_PASSWORD=X4PCJXQMx3ufV8
+      - TZ=America/Chicago
+      - HTTPPROXY=on
+    volumes:
+      - ./gluetun/:/gluetun
+    ports:
+      - 8888:8888
+    restart: always
+  kali:
+    build: kali
+    network_mode: service:mullvad
+    tty: true
+    stdin_open: true
+    environment:
+      - TZ=America/Chicago    
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent
+    network_mode: service:mullvad
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Chicago  
+      - WEBUI_PORT=8080
+    volumes:
+      - ./qbittorrent/appdata/config:/config
+      - ./qbittorrent/downloads:/downloads
+    restart: unless-stopped
